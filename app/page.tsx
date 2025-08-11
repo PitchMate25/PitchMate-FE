@@ -7,7 +7,16 @@ import remarkGfm from "remark-gfm";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-async function postStream(body: any, onChunk: (t: string) => void) {
+// ✅ 타입 추가
+type Mode = "idea" | "plan";
+interface MessageRequest {
+  mode: Mode;
+  userInput?: string;
+  context?: string;
+}
+
+// ✅ any 제거
+async function postStream(body: MessageRequest, onChunk: (t: string) => void) {
   const res = await fetch("/api/message", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -123,20 +132,15 @@ export default function Home() {
     .reverse()
     .filter((m) => m.role === "assistant")
     .map((m) => m.content.trim())
-    .find((c) =>
-      /(##\s*1\.\s*사업 개요)|(^#\s*AI\s*사업계획서)/m.test(c)
-    );
+    .find((c) => /(##\s*1\.\s*사업 개요)|(^#\s*AI\s*사업계획서)/m.test(c));
 
   return (
     <div className="mx-auto max-w-3xl min-h-screen px-4 py-6">
-      {/* Header (부제 제거) */}
       <header className="mb-4">
         <h1 className="text-xl font-bold">AI 사업계획서 생성</h1>
       </header>
 
-      {/* Chat card */}
       <section className="rounded-2xl border bg-white shadow-sm">
-        {/* Messages */}
         <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6 bg-gray-50 rounded-t-2xl">
           <div className="space-y-3">
             {messages.map((m, i) => (
@@ -155,9 +159,7 @@ export default function Home() {
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <pre className="whitespace-pre-wrap text-sm">
-                    {m.content}
-                  </pre>
+                  <pre className="whitespace-pre-wrap text-sm">{m.content}</pre>
                 )}
               </div>
             ))}
@@ -165,7 +167,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Composer */}
         <div className="p-4 sm:p-6 rounded-b-2xl bg-white border-t">
           <div className="flex items-end gap-2">
             <textarea

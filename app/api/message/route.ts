@@ -2,7 +2,7 @@
 import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { mode, userInput, context } = await req.json();
+  const { mode, userInput } = await req.json();
 
   let reply = "";
 
