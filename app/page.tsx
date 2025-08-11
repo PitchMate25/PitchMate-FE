@@ -1,103 +1,208 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+type Msg = { role: "user" | "assistant"; content: string };
+
+async function postStream(body: any, onChunk: (t: string) => void) {
+  const res = await fetch("/api/message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) throw new Error("API error");
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const frames = buf.split("\n\n");
+    buf = frames.pop() || "";
+    for (const f of frames) {
+      if (!f.startsWith("data:")) continue;
+      const data = f.replace(/^data:\s?/, "");
+      if (data === "[DONE]") return;
+      onChunk(data + "\n");
+    }
+  }
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [messages, setMessages] = useState<Msg[]>([
+    { role: "assistant", content: "여행 관련해서 무엇을 만들고 싶나요?" },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState<null | "chat" | "plan">(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function downloadMarkdown(text: string) {
+    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `사업계획서_${new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replaceAll(":", "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function sendMessage() {
+    const text = input.trim();
+    if (!text) return;
+    setInput("");
+    setMessages((m) => [
+      ...m,
+      { role: "user", content: text },
+      { role: "assistant", content: "" },
+    ]);
+    setLoading("chat");
+    try {
+      await postStream({ mode: "idea", userInput: text }, (chunk) => {
+        setMessages((m) => {
+          const copy = [...m];
+          copy[copy.length - 1] = {
+            role: "assistant",
+            content: (copy[copy.length - 1].content || "") + chunk,
+          };
+          return copy;
+        });
+      });
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  // 완성본(템플릿) 생성
+  async function generatePlan() {
+    const context = messages
+      .map((m) => (m.role === "user" ? `U: ${m.content}` : `A: ${m.content}`))
+      .join("\n")
+      .slice(0, 6000);
+
+    setMessages((m) => [
+      ...m,
+      { role: "assistant", content: "사업계획서 생성 중...\n" },
+    ]);
+    setLoading("plan");
+    try {
+      await postStream({ mode: "plan", context }, (chunk) => {
+        setMessages((m) => {
+          const copy = [...m];
+          copy[copy.length - 1] = {
+            role: "assistant",
+            content: (copy[copy.length - 1].content || "") + chunk,
+          };
+          return copy;
+        });
+      });
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  // 마지막 "완성본"만 다운로드 대상으로 인식
+  const lastPlan = [...messages]
+    .reverse()
+    .filter((m) => m.role === "assistant")
+    .map((m) => m.content.trim())
+    .find((c) =>
+      /(##\s*1\.\s*사업 개요)|(^#\s*AI\s*사업계획서)/m.test(c)
+    );
+
+  return (
+    <div className="mx-auto max-w-3xl min-h-screen px-4 py-6">
+      {/* Header (부제 제거) */}
+      <header className="mb-4">
+        <h1 className="text-xl font-bold">AI 사업계획서 생성</h1>
+      </header>
+
+      {/* Chat card */}
+      <section className="rounded-2xl border bg-white shadow-sm">
+        {/* Messages */}
+        <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6 bg-gray-50 rounded-t-2xl">
+          <div className="space-y-3">
+            {messages.map((m, i) => (
+              <div
+                key={i}
+                className={
+                  m.role === "user"
+                    ? "ml-auto max-w-[80%] rounded-2xl px-4 py-2 shadow-sm bg-black text-white"
+                    : "mr-auto max-w-[80%] rounded-2xl px-4 py-2 shadow-sm border bg-white"
+                }
+              >
+                {m.role === "assistant" ? (
+                  <div className="markdown-body text-sm">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {m.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {m.content}
+                  </pre>
+                )}
+              </div>
+            ))}
+            <div ref={endRef} />
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Composer */}
+        <div className="p-4 sm:p-6 rounded-b-2xl bg-white border-t">
+          <div className="flex items-end gap-2">
+            <textarea
+              className="flex-1 h-24 resize-none rounded-xl border p-3 text-sm shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
+              placeholder="질문이나 아이디어를 입력하고 Enter(또는 보내기) ▶"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKey}
+            />
+            <Button onClick={sendMessage} disabled={loading !== null} className="h-10">
+              보내기
+            </Button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button onClick={generatePlan} disabled={loading !== null}>
+              {loading === "plan" ? "사업계획서 생성 중..." : "사업계획서 생성"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => lastPlan && downloadMarkdown(lastPlan)}
+              disabled={!lastPlan || loading !== null}
+            >
+              다운로드(.md)
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() =>
+                setMessages([{ role: "assistant", content: "새 대화를 시작합니다." }])
+              }
+              disabled={loading !== null}
+            >
+              새 대화
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
