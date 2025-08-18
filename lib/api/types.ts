@@ -50,3 +50,24 @@ export interface PageConversationSummary {
   meta: PageMeta;
   data: ConversationSummary[];
 }
+
+/* -------------------------
+   ✅ 로드맵 타입 (추가)
+--------------------------*/
+export type MilestoneState = "completed" | "in_progress" | "not_started";
+
+export interface Milestone {
+  id: string;
+  title: string;
+  desc?: string;
+  state: MilestoneState;
+}
+
+export interface Roadmap {
+  planId: string;
+  title?: string;
+  /** 서버가 주지 않으면 프론트에서 계산해 사용 */
+  progress?: number;
+  milestones: Milestone[];
+  updatedAt?: string;
+}

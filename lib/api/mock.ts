@@ -1,69 +1,141 @@
-import type { PageConversationSummary, Conversation, Message, Attachment, StreamEvent } from "./types";
+// lib/api/mock.ts
+// ───────── 로컬스토리지 기반 목업 유틸 (백엔드 붙이기 전 임시 동작용) ─────────
 
-const wait = (ms:number)=> new Promise(r=>setTimeout(r, ms));
-const now = ()=> new Date().toISOString();
-
-const mockConversations: PageConversationSummary = {
-  meta: { page:1, size:20, totalElements:1, totalPages:1 },
-  data: [{ id:"conv_demo_001", title:"시장조사 Q&A", createdAt:now(), updatedAt:now() }],
+export type ConvSummary = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
-const mockMessages: Message[] = [
-  { id:"m1", role:"user", content:"여행 관련 사업 추천해줘", createdAt:now(), status:"final" },
-  { id:"m2", role:"ai", content:"비성수기 최적화·현지 체험 큐레이션·가족 일정 연동 아이디어가 유망해요.", createdAt:now(), status:"final" },
-];
+export type ChatMsg = {
+  id: string;
+  role: "user" | "ai";
+  content: string;
+  createdAt: string;
+};
 
-let aiCounter = 0;
+const K = {
+  convs: "pm_conversations",
+  msgs: (cid: string) => `pm_msgs_${cid}`,
+  msgsPrefix: "pm_msgs_",
+};
 
-const mockAttachments: Attachment[] = [
-  { id:"att_001", conversationId:"conv_demo_001", messageId:"m2", kind:"plan", format:"pdf",
-    name:"샘플_사업계획서.pdf", size: 128_000, createdAt: now() },
-];
+function nowISO() {
+  return new Date().toISOString();
+}
 
-export const MockAPI = {
-  async listConversations(){ await wait(300); return mockConversations; },
-  async getConversation(id:string): Promise<Conversation> {
-    await wait(300); return { id, title:"시장조사 Q&A", messages: mockMessages, createdAt:now(), updatedAt:now() };
-  },
-  async patchConversation(id:string, title:string){ await wait(200); return { id, title, messages: mockMessages, createdAt:now(), updatedAt:now() }; },
-  async deleteConversation(_id:string){ await wait(200); },
-
-  async sendMessage(_id:string, body:{ content:string; clientMessageId?: string|null }) {
-    await wait(120);
-    const userMsg: Message = { id: body.clientMessageId || "u-"+Math.random().toString(36).slice(2), role:"user", content: body.content, createdAt: now(), status:"final" };
-    mockMessages.push(userMsg);
-    const aiMsg: Message = { id: "ai-"+Math.random().toString(36).slice(2), role:"ai", content:"", createdAt: now(), status:"final" };
-    mockMessages.push(aiMsg);
-    return { user: userMsg, ai: aiMsg };
-  },
-
-  async streamMessage(_id:string, _body:{ content:string }, onEvent:(ev:StreamEvent)=>void) {
-    const chunks = [
-      "좋은 출발입니다. ",
-      "‘발산→세부화→문서화’ 단계로 진행해볼게요. ",
-      "핵심 기능은 동적 가격 신호, 일정 추천, 현지 체험 큐레이션입니다. ",
-      "원하시면 PDF로 기본 사업계획서도 만들어 드릴게요."
-    ];
-    for (const c of chunks) { await wait(250); onEvent({ type:"token", delta:c }); }
-    aiCounter++;
-    if (aiCounter % 3 === 0) {
-      mockAttachments.push({
-        id:"att_"+Math.random().toString(36).slice(2),
-        conversationId:"conv_demo_001",
-        messageId:"m"+(mockMessages.length+1),
-        kind:"plan", format:"pdf",
-        name:"자동생성_사업계획서.pdf",
-        size: 196_000, createdAt: now(),
-      });
+// ▼▼ 비로그인 시 전체 정리용
+/** 로컬에 남아있는 모든 대화방/메시지(목록 + pm_msgs_*)를 삭제 */
+export function lsClearAllConvs() {
+  try {
+    // 대화방 목록 제거
+    localStorage.removeItem(K.convs);
+    // 모든 메시지 키 제거
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)!;
+      if (key.startsWith(K.msgsPrefix)) toRemove.push(key);
     }
-    onEvent({ type:"done" });
-  },
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // noop
+  }
+}
 
-  async listAttachments(conversationId:string){ await wait(200); return mockAttachments.filter(a=>a.conversationId===conversationId); },
-  async downloadAttachment(_cid:string, _aid:string){
-    const blob = new Blob([`%PDF-1.4\n% Mock PDF ${now()}\n%%EOF`], { type:"application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "mock.pdf"; a.click();
-    URL.revokeObjectURL(url);
-  },
+// ── 대화방 목록
+export function lsGetConvs(): ConvSummary[] {
+  try {
+    return JSON.parse(localStorage.getItem(K.convs) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function lsSaveConvs(list: ConvSummary[]) {
+  localStorage.setItem(K.convs, JSON.stringify(list));
+}
+
+export function lsCreateConv(title = "New Chat") {
+  const id = "conv_" + Math.random().toString(36).slice(2, 8);
+  const list = lsGetConvs();
+  const item: ConvSummary = { id, title, createdAt: nowISO(), updatedAt: nowISO() };
+  list.unshift(item);
+  lsSaveConvs(list);
+  localStorage.setItem(K.msgs(id), JSON.stringify([]));
+  return id;
+}
+
+// ── 메시지
+export function lsGetMsgs(cid: string): ChatMsg[] {
+  try {
+    return JSON.parse(localStorage.getItem(K.msgs(cid)) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function lsPushMsg(cid: string, msg: Omit<ChatMsg, "id" | "createdAt">) {
+  const msgs = lsGetMsgs(cid);
+  const next: ChatMsg = { ...msg, id: String(msgs.length + 1), createdAt: nowISO() };
+  msgs.push(next);
+  localStorage.setItem(K.msgs(cid), JSON.stringify(msgs));
+
+  // 대화방 updatedAt 갱신
+  const convs = lsGetConvs().map((c) => (c.id === cid ? { ...c, updatedAt: nowISO() } : c));
+  lsSaveConvs(convs);
+
+  return next;
+}
+
+// lib/api/mock.ts (하단에 추가)
+
+// --- 로드맵 목업 ---
+import type { Roadmap } from "@/lib/api/types";
+
+/** 데모용 로드맵 목업 데이터 */
+const ROADMAP_FIXTURE: Roadmap = {
+  planId: "demo-plan",
+  title: "Demo Business Plan",
+  // progress는 의도적으로 생략 → 프론트에서 계산되게
+  milestones: [
+    {
+      id: "topic",
+      title: "사업 주제 선정",
+      desc: "문제 정의, 대상 고객, 제공 가치 포인트 정리",
+      state: "completed",
+    },
+    {
+      id: "market",
+      title: "시장 조사 및 분석",
+      desc: "SWOT 분석, TAM/SAM/SOM 등 시장 규모 분석",
+      state: "in_progress",
+    },
+    {
+      id: "product",
+      title: "사업 정의(제품/서비스)",
+      desc: "핵심 기능, 차별점, 제공 방식",
+      state: "not_started",
+    },
+    {
+      id: "bm",
+      title: "비즈니스 모델 수립",
+      desc: "수익 구조, 고객 확보/전환/유지 전략",
+      state: "not_started",
+    },
+    {
+      id: "exec",
+      title: "요약(Executive Summary)",
+      desc: "핵심 가치 제안과 요약본",
+      state: "not_started",
+    },
+  ],
+  updatedAt: new Date().toISOString(),
 };
+
+/** 목업 로드맵 조회 */
+export async function mockGetRoadmap(planId: string): Promise<Roadmap> {
+  // planId를 쓰고 싶으면 여기서 스위치 가능
+  await new Promise((r) => setTimeout(r, 200)); // 살짝 딜레이
+  return { ...ROADMAP_FIXTURE, planId };
+}
