@@ -88,8 +88,6 @@ export function lsPushMsg(cid: string, msg: Omit<ChatMsg, "id" | "createdAt">) {
   return next;
 }
 
-// lib/api/mock.ts (하단에 추가)
-
 // --- 로드맵 목업 ---
 import type { Roadmap } from "@/lib/api/types";
 
@@ -135,7 +133,136 @@ const ROADMAP_FIXTURE: Roadmap = {
 
 /** 목업 로드맵 조회 */
 export async function mockGetRoadmap(planId: string): Promise<Roadmap> {
-  // planId를 쓰고 싶으면 여기서 스위치 가능
   await new Promise((r) => setTimeout(r, 200)); // 살짝 딜레이
   return { ...ROADMAP_FIXTURE, planId };
 }
+
+// 🔽 기존 파일 하단 근처에 추가
+export function lsRenameConv(id: string, title: string) {
+  const list = lsGetConvs();
+  const idx = list.findIndex((c) => c.id === id);
+  if (idx !== -1) {
+    list[idx] = { ...list[idx], title, updatedAt: nowISO() };
+    lsSaveConvs(list);
+  }
+}
+
+export function lsDeleteConv(id: string) {
+  const list = lsGetConvs().filter((c) => c.id !== id);
+  lsSaveConvs(list);
+  localStorage.removeItem(K.msgs(id)); // 해당 대화 메시지도 함께 지움
+}
+
+// === (파일 끝에 추가) MockAPI: client.ts에서 사용하는 목업 백엔드 ===
+import type {
+  Conversation,
+  ConversationSummary,
+  Message,
+  Attachment,
+  PageConversationSummary,
+  Role,
+  StreamEvent, // ✅ 추가
+} from "@/lib/api/types";
+
+// ChatMsg -> Message
+function toMessage(m: ChatMsg): Message {
+  return {
+    id: m.id,
+    role: m.role as Role,
+    content: m.content,
+    createdAt: m.createdAt,
+    status: "final",
+  };
+}
+
+// ConvSummary -> Conversation (메시지 포함)
+function toConversation(conv: ConvSummary): Conversation {
+  const msgs = lsGetMsgs(conv.id).map(toMessage);
+  return {
+    id: conv.id,
+    title: conv.title,
+    messages: msgs,
+    createdAt: conv.createdAt,
+    updatedAt: conv.updatedAt,
+  };
+}
+
+export const MockAPI = {
+  async listConversations(): Promise<PageConversationSummary> {
+    const list = lsGetConvs();
+    return {
+      meta: {
+        page: 1,
+        size: list.length,
+        totalElements: list.length,
+        totalPages: 1,
+      },
+      data: list.map<ConversationSummary>((c) => ({
+        id: c.id,
+        title: c.title,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      })),
+    };
+  },
+
+  async getConversation(id: string): Promise<Conversation> {
+    const conv = lsGetConvs().find((c) => c.id === id);
+    if (!conv) {
+      // 존재하지 않으면 비어있는 대화 형태로 반환(목업)
+      return {
+        id,
+        title: "New Chat",
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return toConversation(conv);
+  },
+
+  async patchConversation(id: string, title: string): Promise<Conversation> {
+    lsRenameConv(id, title);
+    const conv = lsGetConvs().find((c) => c.id === id)!;
+    return toConversation(conv);
+  },
+
+  async deleteConversation(id: string): Promise<void> {
+    lsDeleteConv(id);
+  },
+
+  async sendMessage(
+    id: string,
+    body: { content: string; parentMessageId?: string | null; clientMessageId?: string | null }
+  ): Promise<{ user: Message; ai: Message }> {
+    const u = lsPushMsg(id, { role: "user", content: body.content });
+    const a = lsPushMsg(id, { role: "ai", content: `(${id}) 응답: ${body.content}` });
+    return { user: toMessage(u), ai: toMessage(a) };
+  },
+
+  async listAttachments(_cid: string): Promise<Attachment[]> {
+    return [];
+  },
+
+  async downloadAttachment(_cid: string, _aid: string): Promise<void> {
+    // mock: 아무 것도 안 함
+  },
+
+  async streamMessage(
+    conversationId: string,
+    body: { content: string },
+    onEvent: (ev: StreamEvent) => void // ✅ 변경
+  ) {
+    // 아주 단순한 토큰 스트림 목업
+    const reply = `(${conversationId}) 스트림 응답: ${body.content}`;
+    for (const ch of reply.split("")) {
+      await new Promise((r) => setTimeout(r, 10));
+      onEvent({ type: "token", delta: ch });
+    }
+    onEvent({ type: "done" });
+
+    // 스트림 종료 후 메시지 실제 저장(목업)
+    lsPushMsg(conversationId, { role: "user", content: body.content });
+    lsPushMsg(conversationId, { role: "ai", content: reply });
+  },
+};
