@@ -56,7 +56,7 @@ export function lsSaveConvs(list: ConvSummary[]) {
   localStorage.setItem(K.convs, JSON.stringify(list));
 }
 
-export function lsCreateConv(title = "New Chat") {
+export function lsCreateConv(title = "새 채팅") {
   const id = "conv_" + Math.random().toString(36).slice(2, 8);
   const list = lsGetConvs();
   const item: ConvSummary = { id, title, createdAt: nowISO(), updatedAt: nowISO() };
@@ -212,7 +212,7 @@ export const MockAPI = {
       // 존재하지 않으면 비어있는 대화 형태로 반환(목업)
       return {
         id,
-        title: "New Chat",
+        title: "새 채팅",
         messages: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

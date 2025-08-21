@@ -2,7 +2,12 @@ export type Provider = "google" | "kakao" | "naver";
 export type Role = "user" | "ai" | "system";
 export type MsgStatus = "streaming" | "final" | "error";
 
-export interface PageMeta { page: number; size: number; totalElements: number; totalPages: number; }
+export interface PageMeta {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
 
 export interface ConversationSummary {
   id: string;
@@ -18,7 +23,8 @@ export interface Message {
   createdAt: string;
   parentId?: string | null;
   status: MsgStatus;
-  meta?: Record<string, any>;
+  /** 자유형 메타데이터(타입 세이프하게 unknown 사용) */
+  meta?: Record<string, unknown>;
   clientMessageId?: string | null;
 }
 

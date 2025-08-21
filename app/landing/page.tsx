@@ -39,7 +39,8 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative overflow-hidden rounded-xl border bg-white shadow-sm">
         <img
-          src="https://images.unsplash.com/photo-1496096265110-f83ad7f96608?q=80&w=1600&auto=format&fit=crop"
+          /* 배경 전구 이미지로 교체 */
+          src="https://images.twinkl.co.uk/tr/raw/upload/u/ux/lightbulb-1875247-1920_ver_1.jpg"
           alt="Idea"
           className="h-[320px] w-full rounded-xl object-cover"
         />
@@ -47,21 +48,25 @@ export default function LandingPage() {
         <div className="absolute inset-0 rounded-xl bg-black/35" />
         {/* centered copy */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="px-6 text-center text-white">
-            {/* ⬇ 제목 크기 살짝 축소 + 줄바꿈 방지 */}
+          {/* 텍스트 살짝 위로 (-translate-y-4) */}
+          <div className="px-6 text-center text-white -translate-y-4">
             <h1 className="mx-auto max-w-4xl text-2xl font-extrabold leading-tight tracking-tight md:text-4xl md:whitespace-nowrap [text-shadow:_0_2px_12px_rgba(0,0,0,.35)]">
               머릿속 숨어있는 아이디어를 구체화시키세요!
             </h1>
             <p className="mx-auto mt-3 max-w-3xl text-xs opacity-90 md:text-sm">
-              Transform your business ideas into a comprehensive plan with our
-              AI-powered assistant. Get step-by-step guidance, idea suggestions,
-              and automated plan generation.
+              AI가 도와주는 체계적인 사업 계획서 만들기!  <br />
+              아이디어 발굴, 단계별 전략 수립, 사업 계획서 작성까지 전부 한 번에 해결하세요.
             </p>
           </div>
         </div>
-        {/* ▶ 시작하기 버튼(미리보기 섹션 버튼과 동일 스타일) */}
+        {/* ▶ Hero 시작하기 버튼 */}
         <div className="absolute bottom-6 right-6">
-          <Button asChild size="sm" variant="secondary">
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="bg-[#60A5FA] text-sm font-bold text-white hover:bg-[#60A5FA] hover:text-white"
+          >
             <Link href="/login">시작하기</Link>
           </Button>
         </div>
@@ -103,8 +108,13 @@ export default function LandingPage() {
       <section className="mt-12">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-extrabold">사업계획서 미리보기</h2>
-          {/* ▶ 위 히어로와 동일 스타일 */}
-          <Button asChild size="sm" variant="default">
+          {/* ▶ 미리보기 시작하기 버튼 */}
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="bg-[#60A5FA] text-sm font-bold text-white hover:bg-[#60A5FA] hover:text-white"
+          >
             <Link href="/login">시작하기</Link>
           </Button>
         </div>
@@ -118,9 +128,10 @@ export default function LandingPage() {
               <div>
                 <h3 className="font-semibold">{p.title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
-                <Button asChild variant="secondary" className="mt-3">
+                {/* 버튼 텍스트: Continue Editing → 수정하기 */}
+                <Button asChild variant="secondary" className="mt-3 font bold">
                   <Link href={`/chat/demo?from=landing&plan=${p.id}`}>
-                    Continue Editing
+                    수정하기
                   </Link>
                 </Button>
               </div>
@@ -134,7 +145,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer (회원가입 링크 제거 요청 반영) */}
+      {/* Footer */}
       <footer className="mt-12 flex items-center justify-end gap-4 border-t py-6 text-xs text-muted-foreground">
         <Link href="/privacy" className="underline">
           개인정보 처리방침

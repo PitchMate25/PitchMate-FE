@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
             {/* 우측: 로그인 버튼만 */}
             <div className="flex items-center gap-3">
-              <Button asChild variant="secondary" size="sm">
+              <Button asChild variant="secondary" size="sm" className="font-extrabold">
                 <Link href="/login">Log in</Link>
               </Button>
             </div>

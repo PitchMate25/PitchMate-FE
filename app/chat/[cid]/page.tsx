@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import ChatSidebar from "@/components/chat/Sidebar";
 import { lsGetMsgs, lsPushMsg, type ChatMsg } from "@/lib/api/mock";
 import { isLoggedIn } from "@/lib/auth/client";
+import { ArrowUp } from "lucide-react";
 
 export default function ChatRoomPage() {
   const { cid } = useParams<{ cid: string }>();
@@ -99,21 +100,24 @@ export default function ChatRoomPage() {
         </div>
 
         {/* 입력창: 화면 하단 고정 */}
-        <div className="sticky bottom-0 z-10 flex gap-2 border-t bg-white p-3">
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Enter"
-            className="flex-1 rounded-md border px-3 py-2"
-          />
-          <button
-            onClick={send}
-            className="rounded-md bg-black px-4 py-2 text-white"
-          >
-            Enter
-          </button>
+        <div className="sticky bottom-0 z-10 bg-background p-3">
+          <div className="flex items-center rounded-md bg-secondary px-2 py-2">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="Enter"
+              className="flex-1 bg-transparent text-sm focus:outline-none text-foreground"
+            />
+            <button
+              onClick={send}
+              aria-label="Send"
+              className="ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-foreground text-foreground hover:bg-foreground hover:text-background"
+            >
+              <ArrowUp className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </section>
     </div>
