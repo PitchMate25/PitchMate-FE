@@ -2,35 +2,35 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { lsGetConvs, lsCreateConv } from "@/lib/api/mock";
+import { lsGetConvs } from "@/lib/api/mock";
 
-/**
- * /conversations 는 예전 데모 화면을 없애고
- * 들어오자마자 가장 최근 대화방으로 보내거나,
- * 없으면 새 대화방을 만들어 그 방으로 이동시킵니다.
- */
 export default function ConversationsRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
     try {
-      let list = lsGetConvs(); // [{id,title,createdAt,updatedAt}, ...]
-      let targetId = list?.[0]?.id;
+      const isCreated = localStorage.getItem("DemoRedirectPage");
 
-      // 대화가 하나도 없으면 새로 만들기
-      if (!targetId) {
-        targetId = lsCreateConv("New Chat");
-        list = lsGetConvs();
+      // 새 채팅 생성 로직은 이미 생성한 경우 실행하지 않음
+      // 따라서 새 채팅 만들지 않고 기존방 유지
+
+      // 기존 채팅방 목록을 불러옴
+      const list = lsGetConvs();
+
+      // 첫번째 채팅방으로 리다이렉트
+      const targetId = list?.[0]?.id;
+
+      if (targetId) {
+        router.replace(`/chat/${targetId}`);
+      } else {
+        // 예외 상황: 채팅방이 아예 없으면 데모 화면 이동
+        router.replace(`/chat/demo`);
       }
-
-      router.replace(`/chat/${targetId}`);
     } catch {
-      // 로컬스토리지가 막힌 환경 대비: 최소한 데모 방으로
       router.replace(`/chat/demo`);
     }
   }, [router]);
 
-  // 잠깐 보이는 로딩
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-muted-foreground">
       이동 중…
