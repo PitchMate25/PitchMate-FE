@@ -12,23 +12,23 @@ type PlanCard = {
 const plans: PlanCard[] = [
   {
     id: "conv_demo_001",
-    title: "Tech Startup Business Plan",
-    desc: "A comprehensive plan for a tech startup focusing on AI solutions.",
+    title: "캠핑용품 구독 서비스",
+    desc: "고객 맟춤형 캠핑 장비를 정기적으로 배송하는 구독 모델로, 편리함과 신제품 경험을 제공",
     image:
       // 일러스트 느낌의 깔끔한 썸네일
       "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200&auto=format&fit=crop",
   },
   {
     id: "conv_demo_002",
-    title: "Retail Business Plan",
-    desc: "A detailed plan for a retail business specializing in sustainable products.",
+    title: "청소년 스포츠 캠프 창업",
+    desc: "청소년 대상 스포츠 교육 체험 캠프를 운영해 건강 증진과 사회성 발달을 지원",
     image:
       "https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?q=80&w=1200&auto=format&fit=crop",
   },
   {
     id: "conv_demo_003",
-    title: "Consulting Business Plan",
-    desc: "A strategic plan for a consulting firm offering business development services.",
+    title: "도시 속 1일 체험형 여행지",
+    desc: "바쁜 도시인들을 위해 단기 맟춤 여행 상품으로, 다양한 체험과 휴식을 결합한 패키지 제공",
     image:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
   },

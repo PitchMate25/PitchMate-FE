@@ -82,7 +82,7 @@ export default function PlanRoadmapPage() {
 
       <div className="rounded-xl border bg-white p-8 shadow-sm">
         <h1 className="text-[28px] font-extrabold leading-tight">사업계획서 로드맵</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-blue-900">
           Track your progress as you build your comprehensive business plan.
         </p>
 
@@ -95,7 +95,7 @@ export default function PlanRoadmapPage() {
               style={{ width: `${progress}%`, backgroundColor: "#4F7DF2" }}
             />
           </div>
-          <div className="mt-2 text-xs font-medium" style={{ color: "#4F7DF2" }}>
+          <div className="mt-2 text-xs font-medium text-blue-900">
             {progress}% Complete
           </div>
         </section>
@@ -109,9 +109,9 @@ export default function PlanRoadmapPage() {
             ))}
           </ul>
 
-        <p className="mt-8 text-xs text-black">
-          위 사업계획서 로드맵은 핵심만 포함되어 있습니다.
-        </p>
+          <p className="mt-8 text-xs text-black">
+            위 사업계획서 로드맵은 핵심만 포함되어 있습니다.
+          </p>
         </section>
       </div>
     </div>
@@ -119,7 +119,6 @@ export default function PlanRoadmapPage() {
 }
 
 function TimelineItem({ m, isLast }: { m: Milestone; isLast: boolean }) {
-  const colorMain = m.state === "in_progress" ? "#4F7DF2" : "rgb(17,24,39)";
   const stateText =
     m.state === "completed"
       ? "Completed"
@@ -127,42 +126,44 @@ function TimelineItem({ m, isLast }: { m: Milestone; isLast: boolean }) {
       ? "In Progress"
       : "Not Started";
 
+  // 제목 색상: "사업 정의"는 항상 검정, 그 외는 기존 규칙
   const Title = (
     <div
       className={`font-semibold ${
-        m.state === "in_progress" ? "text-[#4F7DF2]" : "text-foreground"
+        m.title === "사업 정의"
+          ? "text-black"
+          : m.state === "in_progress"
+          ? "text-[#4F7DF2]"
+          : "text-foreground"
       }`}
     >
       {m.title}
     </div>
   );
 
+  // 설명
   const Desc = m.desc ? (
-    <div className="text-xs text-muted-foreground">{m.desc}</div>
+    <div className="text-xs text-blue-900">{m.desc}</div>
   ) : null;
 
-  const State = (
-    <div
-      className={`text-xs ${
-        m.state === "in_progress" ? "text-[#4F7DF2]" : "text-muted-foreground"
-      }`}
-    >
-      {stateText}
-    </div>
-  );
+  // 상태 텍스트: 남색으로 통일
+  const State = <div className="text-xs text-blue-900">{stateText}</div>;
+
+  // ✅ 아이콘 색상: 상태/타이틀 무관 전부 검정
+  const iconColor = "text-black";
 
   return (
     <li className="grid grid-cols-[28px_1fr] gap-3">
-      {/* 아이콘 + 수직선 (항상 표시) */}
+      {/* 아이콘 + 수직선 */}
       <div className="relative flex justify-center">
         <span className="absolute left-1/2 top-6 h-[calc(100%_-_24px)] w-px -translate-x-1/2 bg-gray-200" />
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
           {m.state === "completed" ? (
-            <Check className="h-4 w-4" />
+            <Check className={`h-4 w-4 ${iconColor}`} />
           ) : m.state === "in_progress" ? (
-            <Pencil className="h-4 w-4" style={{ color: colorMain }} />
+            <Pencil className={`h-4 w-4 ${iconColor}`} />
           ) : (
-            <Circle className="h-4 w-4 text-gray-300" />
+            <Circle className={`h-4 w-4 ${iconColor}`} />
           )}
         </span>
       </div>
@@ -172,7 +173,7 @@ function TimelineItem({ m, isLast }: { m: Milestone; isLast: boolean }) {
         {Title}
         {m.state === "completed" ? (
           <>
-            <div className="text-xs text-muted-foreground">문제 정의</div>
+            <div className="text-xs text-blue-900">문제 정의</div>
             {State}
           </>
         ) : (

@@ -12,26 +12,24 @@ type PlanCard = {
 const mockPlans: PlanCard[] = [
   {
     id: "conv_demo_001",
-    title: "Tech Startup Business Plan",
-    desc: "A comprehensive plan for a tech startup focusing on AI solutions.",
-    image:
-      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop",
+    title: "캠핑용품 구독 서비스",
+    desc: "고객 맞춤형 캠핑 장비를 정기적으로 배송하는 구독 모델로, 편리함과 신제품 경험을 제공",
+    image: "/images/image1.png", // ✅ 교체
   },
   {
     id: "conv_demo_002",
-    title: "Retail Business Plan",
-    desc: "A detailed plan for a retail business specializing in sustainable products.",
-    image:
-      "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
+    title: "청소년 스포츠 캠프 창업",
+    desc: "청소년 대상 스포츠 교육 체험 캠프를 운영해 건강 증진과 사회성 발달을 지원",
+    image: "/images/image2.png", // ✅ 교체
   },
   {
     id: "conv_demo_003",
-    title: "Consulting Business Plan",
-    desc: "A strategic plan for a consulting firm offering business development services.",
-    image:
-      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop",
+    title: "도시 속 1일 체험형 여행지",
+    desc: "바쁜 도시인들을 위해 단기 맞춤 여행 상품으로, 다양한 체험과 휴식을 결합한 패키지 제공",
+    image: "/images/image3.png", // ✅ 교체
   },
 ];
+
 
 export default function LandingPage() {
   return (
@@ -75,31 +73,35 @@ export default function LandingPage() {
       {/* 주요 기능 */}
       <section className="mt-10">
         <h2 className="mb-3 text-2xl font-extrabold">주요 기능</h2>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Our AI-powered assistant provides a comprehensive suite of tools to
-          help you create a winning business plan.
+        {/* ▶ 피그마 문구에 맞춰 교체 */}
+        <p className="mb-6 text-sm text-black">
+          PitchMate는 여행·레저 산업, 특히 캠핑·체험·채널·스포츠 분야에 특화되어 있는 대화형 AI로,  <br />
+          AI와의 대화를 통해 사업 아이템을 구체화하고, 사업계획서의 핵심 요소를 빠짐없이 반영할 수 있습니다.
+           <br /><br />
+          대화 중에는 실시간 피드백과 방향 제시 기능을 통해 의사결정 속도를 높이고, 보다 정교한 사업 전략 수립을 지원합니다. <br />
+          또한, 완성된 계획서는 PDF 또는 DOCX로 즉시 활용 가능한 형태로 제공되어 실제 비즈니스 준비에 바로 활용할 수 있습니다.
         </p>
 
         <div className="grid gap-4 md:grid-cols-4">
           <FeatureCard
             icon="💬"
-            title="대화형 AI"
-            desc="Engage with our AI in a natural, conversational manner to develop your business plan."
+            title="대화를 통한 사업 아이템 구체화"
+            desc="사업 아이디어를 AI가 함께 구조화하고 보안해주어, 핵심을 놓치지 않는 완성도 높은 계획서로 발전시킬 수 있습니다."
           />
           <FeatureCard
             icon="🧭"
-            title="Step-by-Step Guidance"
-            desc="Receive clear, actionable guidance at every stage of the planning process."
+            title="여행·레저 분야 특화 지원"
+            desc="캠핑, 체험, 스포츠 등 세부 분야에 맞춘 전문 가이드를 통해, 타깃 시장에서 최적화된 사업계획서를 빠르게 완성할 수 있습니다."
           />
           <FeatureCard
             icon="💡"
-            title="Idea Suggestions"
-            desc="Unlock innovative ideas and strategies tailored to your business concept."
+            title="실시간 피드백과 방향 제시"
+            desc="AI가 아이디어의 강점과 나아갈 방향을 제공하여, 더 빠르고 명확하게 의사결정을 내릴 수 있습니다."
           />
           <FeatureCard
             icon="📄"
-            title="Automated Plan"
-            desc="Generate a complete, professional business plan document with ease."
+            title="사업계획서 작성 및 문서 추출"
+            desc="대화만으로 완성도 높은 사업계획서를 생성하고, PDF 및 DOCX로 바로 추출해 실전에서 곧바로 활용 가능힙나다."
           />
         </div>
       </section>
@@ -126,15 +128,26 @@ export default function LandingPage() {
               className="grid grid-cols-1 items-center gap-4 rounded-xl border bg-white p-5 shadow-sm md:grid-cols-[1fr_280px]"
             >
               <div>
-                <h3 className="font-semibold">{p.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
-                {/* 버튼 텍스트: Continue Editing → 수정하기 */}
-                <Button asChild variant="secondary" className="mt-3 font bold">
-                  <Link href={`/chat/demo?from=landing&plan=${p.id}`}>
-                    수정하기
-                  </Link>
-                </Button>
+                <h3 className="font-bold">{p.title}</h3>
+                <p className="mt-1 text-sm text-blue-900">{p.desc}</p>
+
+                {/* ▶ 버튼 묶음: 수정하기 + 미리보기(파란색) */}
+                <div className="mt-3 flex gap-2">
+                  <Button asChild variant="secondary" className="font-semibold">
+                    <Link href={`/chat/demo?from=landing&plan=${p.id}`}>
+                      수정하기
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="bg-[#60A5FA] text-black hover:bg-[#60A5FA] hover:text-black font-semibold "
+                  >
+                    <Link href={`/preview/${p.id}`}>Export as PDF</Link>
+                  </Button>
+                </div>
               </div>
+
               <img
                 src={p.image}
                 alt=""
@@ -147,10 +160,10 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="mt-12 flex items-center justify-end gap-4 border-t py-6 text-xs text-muted-foreground">
-        <Link href="/privacy" className="underline">
+        <Link href="/privacy" className="underline text-blue-900">
           개인정보 처리방침
         </Link>
-        <Link href="/terms" className="underline">
+        <Link href="/terms" className="underline text-blue-900">
           이용약관
         </Link>
       </footer>
@@ -171,7 +184,7 @@ function FeatureCard({
     <div className="rounded-lg border bg-white p-4">
       <div className="mb-2 text-2xl">{icon}</div>
       <div className="mb-1 font-semibold">{title}</div>
-      <p className="text-sm text-muted-foreground">{desc}</p>
+      <p className="text-sm text-blue-900">{desc}</p>
     </div>
   );
 }

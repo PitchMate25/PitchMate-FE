@@ -100,25 +100,25 @@ const ROADMAP_FIXTURE: Roadmap = {
     {
       id: "topic",
       title: "사업 주제 선정",
-      desc: "문제 정의, 대상 고객, 제공 가치 포인트 정리",
+      desc: "문제 정의",
       state: "completed",
     },
     {
       id: "market",
-      title: "시장 조사 및 분석",
-      desc: "SWOT 분석, TAM/SAM/SOM 등 시장 규모 분석",
+      title: "사업 정의",
+      desc: "제품 / 서비스 설명",
       state: "in_progress",
     },
     {
       id: "product",
-      title: "사업 정의(제품/서비스)",
-      desc: "핵심 기능, 차별점, 제공 방식",
+      title: "시장 조사 및 분석",
+      desc: "SWOT 분석, TAM/SAM/SOM 등 시장 규모 분석",
       state: "not_started",
     },
     {
       id: "bm",
       title: "비즈니스 모델 수립",
-      desc: "수익 구조, 고객 확보/전환/유지 전략",
+      desc: "수익 구조, 고객 확보 방식 등",
       state: "not_started",
     },
     {
