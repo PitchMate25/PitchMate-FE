@@ -5,66 +5,55 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ChatSidebar from "@/components/chat/Sidebar";
 import { lsGetMsgs, lsPushMsg, type ChatMsg } from "@/lib/api/mock";
-import { isLoggedIn } from "@/lib/auth/client";
 import { ArrowUp } from "lucide-react";
 
 export default function ChatRoomPage() {
   const { cid } = useParams<{ cid: string }>();
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
-  const [authed, setAuthed] = useState<boolean | null>(null); // null: 체크 중
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // 로그인 여부 + 메시지 로드
+  // 메시지 로드 (로그인 여부와 무관하게 항상 로컬에서 로드)
   useEffect(() => {
-    (async () => {
-      const ok = await isLoggedIn();
-      setAuthed(ok);
-
-      if (!cid) return;
-      // 로그인 상태에서만 저장된 기록 로드
-      setMsgs(ok ? lsGetMsgs(cid) : []);
-    })();
+    if (!cid) return;
+    setMsgs(lsGetMsgs(cid));
   }, [cid]);
+
+  // 다른 탭/창에서 변경 시 동기화
+  useEffect(() => {
+    if (!cid) return;
+    const key = `pm_msgs_${cid}`;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === key) setMsgs(lsGetMsgs(cid));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [cid]);
+
+  // 새 메시지 도착 시 자동 스크롤
+  useEffect(() => {
+    if (!listRef.current) return;
+    listRef.current.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [msgs]);
 
   const send = async () => {
     if (!cid || !input.trim()) return;
     const text = input.trim();
     setInput("");
 
-    const ok = authed ?? (await isLoggedIn());
-    // 로그인 O → localStorage에 저장 (목업)
-    if (ok) {
-      lsPushMsg(cid, { role: "user", content: text });
-      setMsgs(lsGetMsgs(cid));
+    // 로그인 여부와 무관하게 항상 localStorage에 저장
+    lsPushMsg(cid, { role: "user", content: text });
+    setMsgs(lsGetMsgs(cid));
 
-      setTimeout(() => {
-        lsPushMsg(cid, { role: "ai", content: `(${cid}) 응답: ${text}` });
-        setMsgs(lsGetMsgs(cid));
-      }, 500);
-    } else {
-      // 로그인 X → 화면에만 표시(저장 안 함)
-      setMsgs((prev) => [
-        ...prev,
-        {
-          id: String(prev.length + 1),
-          role: "user",
-          content: text,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      setTimeout(() => {
-        setMsgs((prev) => [
-          ...prev,
-          {
-            id: String(prev.length + 1),
-            role: "ai",
-            content: `(${cid}) 응답: ${text}`,
-            createdAt: new Date().toISOString(),
-          },
-        ]);
-      }, 500);
-    }
+    // 데모용 AI 응답 (목업)
+    setTimeout(() => {
+      lsPushMsg(cid, { role: "ai", content: `(${cid}) 응답: ${text}` });
+      setMsgs(lsGetMsgs(cid));
+    }, 500);
 
     inputRef.current?.focus();
   };
@@ -86,7 +75,7 @@ export default function ChatRoomPage() {
         </div>
 
         {/* 메시지 영역 */}
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
           {msgs.map((m) => (
             <div
               key={m.id}
